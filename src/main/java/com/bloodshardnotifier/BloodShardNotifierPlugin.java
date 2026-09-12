@@ -3,7 +3,6 @@ package com.bloodshardnotifier;
 import com.google.inject.Provides;
 import java.io.File;
 import java.io.IOException;
-import java.net.URL;
 import javax.inject.Inject;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
@@ -12,9 +11,9 @@ import javax.sound.sampled.FloatControl;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.UnsupportedAudioFileException;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.api.Client;
 import net.runelite.api.ItemID;
 import net.runelite.api.TileItem;
+import net.runelite.api.events.ConfigChanged;
 import net.runelite.api.events.ItemSpawned;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
@@ -29,11 +28,13 @@ import net.runelite.client.plugins.PluginDescriptor;
 )
 public class BloodShardNotifierPlugin extends Plugin
 {
-	@Inject
-	private Client client;
+	private static final String CONFIG_GROUP = "bloodshardnotifier";
 
 	@Inject
 	private BloodShardNotifierConfig config;
+
+	@Inject
+	private ConfigManager configManager;
 
 	private Clip currentClip;
 
@@ -62,6 +63,21 @@ public class BloodShardNotifierPlugin extends Plugin
 		if (item.getId() == ItemID.BLOOD_SHARD)
 		{
 			playConfiguredSound();
+		}
+	}
+
+	@Subscribe
+	public void onConfigChanged(ConfigChanged event)
+	{
+		if (!CONFIG_GROUP.equals(event.getGroup()) || !"testSound".equals(event.getKey()))
+		{
+			return;
+		}
+
+		if (config.testSound())
+		{
+			playConfiguredSound();
+			configManager.setConfiguration(CONFIG_GROUP, "testSound", false);
 		}
 	}
 
