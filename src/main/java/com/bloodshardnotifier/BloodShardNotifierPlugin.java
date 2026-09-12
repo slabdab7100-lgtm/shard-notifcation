@@ -3,11 +3,8 @@ package com.bloodshardnotifier;
 import com.google.inject.Provides;
 import java.awt.Toolkit;
 import java.io.File;
-import java.io.IOException;
 import java.util.concurrent.ScheduledExecutorService;
 import javax.inject.Inject;
-import javax.sound.sampled.LineUnavailableException;
-import javax.sound.sampled.UnsupportedAudioFileException;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ItemID;
 import net.runelite.api.TileItem;
@@ -105,15 +102,7 @@ public class BloodShardNotifierPlugin extends Plugin
 			return;
 		}
 
-		try
-		{
-			audioPlayer.play(file, volumeToGain(config.volume()));
-		}
-		catch (UnsupportedAudioFileException | IOException | LineUnavailableException e)
-		{
-			log.warn("Unable to play Blood Shard Notifier Plus sound: {}", file, e);
-			Toolkit.getDefaultToolkit().beep();
-		}
+		audioPlayer.play(file, volumeToGain(config.volume()));
 	}
 
 	private float volumeToGain(int volume)
