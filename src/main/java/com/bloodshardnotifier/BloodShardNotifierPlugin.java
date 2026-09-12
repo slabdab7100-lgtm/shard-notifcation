@@ -102,7 +102,15 @@ public class BloodShardNotifierPlugin extends Plugin
 			return;
 		}
 
-		audioPlayer.play(file, volumeToGain(config.volume()));
+		try
+		{
+			audioPlayer.play(file, volumeToGain(config.volume()));
+		}
+		catch (Exception ex)
+		{
+			log.warn("Unable to play Blood Shard Notifier Plus sound: {}", file, ex);
+			Toolkit.getDefaultToolkit().beep();
+		}
 	}
 
 	private float volumeToGain(int volume)
