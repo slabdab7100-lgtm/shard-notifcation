@@ -1,19 +1,18 @@
 package com.bloodshardnotifier;
 
 import com.google.inject.Provides;
+import java.awt.Toolkit;
 import java.io.File;
 import java.io.IOException;
+import java.util.concurrent.ScheduledExecutorService;
 import javax.inject.Inject;
-import javax.sound.sampled.AudioInputStream;
-import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.Clip;
-import javax.sound.sampled.FloatControl;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.UnsupportedAudioFileException;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ItemID;
 import net.runelite.api.TileItem;
 import net.runelite.api.events.ItemSpawned;
+import net.runelite.client.audio.AudioPlayer;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
@@ -24,7 +23,7 @@ import net.runelite.client.plugins.PluginDescriptor;
 @PluginDescriptor(
 	name = "Blood Shard Notifier Plus",
 	description = "Plays a configurable sound when a Blood shard appears on the ground",
-	tags = {"bloodshard", "notification", "sound", "vampyres"}
+	tags = {"bloodshard", "notification", "sound", "vampyres", "vyrewatch"}
 )
 public class BloodShardNotifierPlugin extends Plugin
 {
@@ -36,7 +35,11 @@ public class BloodShardNotifierPlugin extends Plugin
 	@Inject
 	private ConfigManager configManager;
 
-	private Clip currentClip;
+	@Inject
+	private AudioPlayer audioPlayer;
+
+	@Inject
+	private ScheduledExecutorService scheduledExecutorService;
 
 	@Override
 	protected void startUp()
@@ -47,7 +50,6 @@ public class BloodShardNotifierPlugin extends Plugin
 	@Override
 	protected void shutDown()
 	{
-		stopCurrentClip();
 		log.info("Blood Shard Notifier Plus stopped");
 	}
 
@@ -62,7 +64,7 @@ public class BloodShardNotifierPlugin extends Plugin
 		TileItem item = event.getItem();
 		if (item.getId() == ItemID.BLOOD_SHARD)
 		{
-			playConfiguredSound();
+			scheduleSound();
 		}
 	}
 
@@ -76,9 +78,14 @@ public class BloodShardNotifierPlugin extends Plugin
 
 		if (config.testSound())
 		{
-			playConfiguredSound();
+			scheduleSound();
 			configManager.setConfiguration(CONFIG_GROUP, "testSound", false);
 		}
+	}
+
+	private void scheduleSound()
+	{
+		scheduledExecutorService.submit(this::playConfiguredSound);
 	}
 
 	private void playConfiguredSound()
@@ -86,7 +93,7 @@ public class BloodShardNotifierPlugin extends Plugin
 		String path = config.soundFile().trim();
 		if (path.isEmpty())
 		{
-			java.awt.Toolkit.getDefaultToolkit().beep();
+			Toolkit.getDefaultToolkit().beep();
 			return;
 		}
 
@@ -94,58 +101,29 @@ public class BloodShardNotifierPlugin extends Plugin
 		if (!file.isFile())
 		{
 			log.warn("Blood Shard Notifier Plus sound file does not exist: {}", path);
-			java.awt.Toolkit.getDefaultToolkit().beep();
+			Toolkit.getDefaultToolkit().beep();
 			return;
 		}
 
 		try
 		{
-			stopCurrentClip();
-			try (AudioInputStream audio = AudioSystem.getAudioInputStream(file))
-			{
-				Clip clip = AudioSystem.getClip();
-				clip.open(audio);
-				applyVolume(clip, config.volume());
-				currentClip = clip;
-				clip.start();
-			}
+			audioPlayer.play(file, volumeToGain(config.volume()));
 		}
 		catch (UnsupportedAudioFileException | IOException | LineUnavailableException e)
 		{
 			log.warn("Unable to play Blood Shard Notifier Plus sound: {}", file, e);
-			java.awt.Toolkit.getDefaultToolkit().beep();
+			Toolkit.getDefaultToolkit().beep();
 		}
 	}
 
-	private void applyVolume(Clip clip, int volume)
+	private float volumeToGain(int volume)
 	{
-		if (!clip.isControlSupported(FloatControl.Type.MASTER_GAIN))
-		{
-			return;
-		}
-
-		FloatControl control = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
 		if (volume <= 0)
 		{
-			control.setValue(control.getMinimum());
-			return;
+			return -80.0f;
 		}
 
-		float min = control.getMinimum();
-		float max = control.getMaximum();
-		float normalized = volume / 100.0f;
-		float gain = (float) (20.0 * Math.log10(normalized));
-		control.setValue(Math.max(min, Math.min(max, gain)));
-	}
-
-	private void stopCurrentClip()
-	{
-		if (currentClip != null)
-		{
-			currentClip.stop();
-			currentClip.close();
-			currentClip = null;
-		}
+		return (float) (20.0 * Math.log10(volume / 100.0));
 	}
 
 	@Provides
