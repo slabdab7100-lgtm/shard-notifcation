@@ -21,7 +21,7 @@ public interface BloodShardNotifierConfig extends Config
 	@ConfigItem(
 		keyName = "soundFile",
 		name = "Sound file",
-		description = "Path to the WAV file to play. Leave blank to use the system beep."
+		description = "Full path to the WAV file to play. Leave blank to use the system beep."
 	)
 	default String soundFile()
 	{
@@ -42,7 +42,7 @@ public interface BloodShardNotifierConfig extends Config
 	@ConfigItem(
 		keyName = "testSound",
 		name = "Test sound",
-		description = "Plays the configured sound when this setting is changed to true; turn it back off afterward"
+		description = "Turn this on to immediately play the configured sound; it automatically turns itself back off"
 	)
 	default boolean testSound()
 	{
