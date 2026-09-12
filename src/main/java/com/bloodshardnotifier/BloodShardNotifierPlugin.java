@@ -22,9 +22,9 @@ import net.runelite.client.plugins.PluginDescriptor;
 
 @Slf4j
 @PluginDescriptor(
-	name = "Blood Shard Notifier",
+	name = "Blood Shard Notifier Plus",
 	description = "Plays a configurable sound when a Blood shard appears on the ground",
-	tags = {"blood shard", "bloodshard", "notification", "sound", "vampyres"}
+	tags = {"bloodshard", "notification", "sound", "vampyres"}
 )
 public class BloodShardNotifierPlugin extends Plugin
 {
@@ -41,14 +41,14 @@ public class BloodShardNotifierPlugin extends Plugin
 	@Override
 	protected void startUp()
 	{
-		log.info("Blood Shard Notifier started");
+		log.info("Blood Shard Notifier Plus started");
 	}
 
 	@Override
 	protected void shutDown()
 	{
 		stopCurrentClip();
-		log.info("Blood Shard Notifier stopped");
+		log.info("Blood Shard Notifier Plus stopped");
 	}
 
 	@Subscribe
@@ -93,7 +93,7 @@ public class BloodShardNotifierPlugin extends Plugin
 		File file = new File(path);
 		if (!file.isFile())
 		{
-			log.warn("Blood Shard Notifier sound file does not exist: {}", path);
+			log.warn("Blood Shard Notifier Plus sound file does not exist: {}", path);
 			java.awt.Toolkit.getDefaultToolkit().beep();
 			return;
 		}
@@ -112,7 +112,7 @@ public class BloodShardNotifierPlugin extends Plugin
 		}
 		catch (UnsupportedAudioFileException | IOException | LineUnavailableException e)
 		{
-			log.warn("Unable to play Blood Shard Notifier sound: {}", file, e);
+			log.warn("Unable to play Blood Shard Notifier Plus sound: {}", file, e);
 			java.awt.Toolkit.getDefaultToolkit().beep();
 		}
 	}
