@@ -1,4 +1,4 @@
-# Blood Shard Notifier
+# Blood Shard Notifier Plus
 
 A RuneLite plugin that alerts you when a Blood shard appears on the ground.
 
@@ -7,8 +7,9 @@ A RuneLite plugin that alerts you when a Blood shard appears on the ground.
 - Detects Blood shards using RuneLite's `ItemSpawned` event.
 - Enable/disable the notifier.
 - Choose a custom `.wav` file by entering its full path.
+- Plays the notification through RuneLite's audio system.
 - Adjustable sound volume.
-- Falls back to the normal system beep when no valid WAV is configured.
+- Leaving the sound file blank disables sound playback.
 
 ## Custom sound
 
@@ -18,7 +19,7 @@ Example:
 
 `C:\\Users\\YourName\\Music\\blood-shard.wav`
 
-The file must be a WAV file supported by Java's audio system.
+The file must be a WAV file supported by Java's audio system. Playback is handled through RuneLite's `AudioPlayer`.
 
 ## Important
 
