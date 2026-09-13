@@ -1,7 +1,6 @@
 package com.bloodshardnotifier;
 
 import com.google.inject.Provides;
-import java.awt.Toolkit;
 import java.io.File;
 import java.util.concurrent.ScheduledExecutorService;
 import javax.inject.Inject;
@@ -24,7 +23,7 @@ import net.runelite.client.plugins.PluginDescriptor;
 )
 public class BloodShardNotifierPlugin extends Plugin
 {
-	private static final String CONFIG_GROUP = "bloodshardnotifier";
+	private static final String CONFIG_GROUP = "bloodshardnotifierplus";
 
 	@Inject
 	private BloodShardNotifierConfig config;
@@ -75,14 +74,14 @@ public class BloodShardNotifierPlugin extends Plugin
 
 		if (config.testSound())
 		{
-			scheduleSound();
 			configManager.setConfiguration(CONFIG_GROUP, "testSound", false);
+			scheduleSound();
 		}
 	}
 
 	private void scheduleSound()
 	{
-		scheduledExecutorService.submit(this::playConfiguredSound);
+		scheduledExecutorService.execute(this::playConfiguredSound);
 	}
 
 	private void playConfiguredSound()
@@ -90,7 +89,7 @@ public class BloodShardNotifierPlugin extends Plugin
 		String path = config.soundFile().trim();
 		if (path.isEmpty())
 		{
-			Toolkit.getDefaultToolkit().beep();
+			log.warn("Blood Shard Notifier Plus has no sound file configured; no sound will be played");
 			return;
 		}
 
@@ -98,7 +97,6 @@ public class BloodShardNotifierPlugin extends Plugin
 		if (!file.isFile())
 		{
 			log.warn("Blood Shard Notifier Plus sound file does not exist: {}", path);
-			Toolkit.getDefaultToolkit().beep();
 			return;
 		}
 
@@ -109,7 +107,6 @@ public class BloodShardNotifierPlugin extends Plugin
 		catch (Exception ex)
 		{
 			log.warn("Unable to play Blood Shard Notifier Plus sound: {}", file, ex);
-			Toolkit.getDefaultToolkit().beep();
 		}
 	}
 
