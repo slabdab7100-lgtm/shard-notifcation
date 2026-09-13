@@ -5,7 +5,7 @@ import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
 import net.runelite.client.config.Range;
 
-@ConfigGroup("bloodshardnotifier")
+@ConfigGroup("bloodshardnotifierplus")
 public interface BloodShardNotifierConfig extends Config
 {
 	@ConfigItem(
@@ -21,7 +21,7 @@ public interface BloodShardNotifierConfig extends Config
 	@ConfigItem(
 		keyName = "soundFile",
 		name = "Sound file",
-		description = "Full path to the WAV file to play. Leave blank to use the system beep."
+		description = "Full path to the WAV file to play. Leave blank to disable sound playback."
 	)
 	default String soundFile()
 	{
