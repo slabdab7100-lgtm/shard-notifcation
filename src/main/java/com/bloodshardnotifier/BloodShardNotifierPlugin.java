@@ -4,6 +4,9 @@ import com.google.inject.Provides;
 import java.io.File;
 import java.util.concurrent.ScheduledExecutorService;
 import javax.inject.Inject;
+import javax.swing.JFileChooser;
+import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.SwingUtilities;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ItemID;
 import net.runelite.api.TileItem;
@@ -67,16 +70,54 @@ public class BloodShardNotifierPlugin extends Plugin
 	@Subscribe
 	public void onConfigChanged(ConfigChanged event)
 	{
-		if (!CONFIG_GROUP.equals(event.getGroup()) || !"testSound".equals(event.getKey()))
+		if (!CONFIG_GROUP.equals(event.getGroup()))
 		{
 			return;
 		}
 
-		if (config.testSound())
+		if ("testSound".equals(event.getKey()) && config.testSound())
 		{
 			configManager.setConfiguration(CONFIG_GROUP, "testSound", false);
 			scheduleSound();
 		}
+		else if ("selectSoundFile".equals(event.getKey()) && config.selectSoundFile())
+		{
+			configManager.setConfiguration(CONFIG_GROUP, "selectSoundFile", false);
+			SwingUtilities.invokeLater(this::chooseSoundFile);
+		}
+	}
+
+	private void chooseSoundFile()
+	{
+		JFileChooser fileChooser = new JFileChooser();
+		fileChooser.setDialogTitle("Select Blood Shard notification sound");
+		fileChooser.setFileFilter(new FileNameExtensionFilter("WAV audio files (*.wav)", "wav"));
+		fileChooser.setAcceptAllFileFilterUsed(false);
+
+		String currentPath = config.soundFile().trim();
+		if (!currentPath.isEmpty())
+		{
+			File currentFile = new File(currentPath);
+			if (currentFile.exists())
+			{
+				fileChooser.setSelectedFile(currentFile);
+			}
+		}
+
+		int result = fileChooser.showOpenDialog(null);
+		if (result != JFileChooser.APPROVE_OPTION)
+		{
+			return;
+		}
+
+		File selectedFile = fileChooser.getSelectedFile();
+		if (selectedFile == null || !selectedFile.isFile())
+		{
+			return;
+		}
+
+		configManager.setConfiguration(CONFIG_GROUP, "soundFile", selectedFile.getAbsolutePath());
+		log.info("Blood Shard Notifier Plus sound file selected: {}", selectedFile);
 	}
 
 	private void scheduleSound()
