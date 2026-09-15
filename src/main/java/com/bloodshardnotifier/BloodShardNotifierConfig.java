@@ -8,54 +8,58 @@ import net.runelite.client.config.Range;
 @ConfigGroup("bloodshardnotifierplus")
 public interface BloodShardNotifierConfig extends Config
 {
-	@ConfigItem(
-		keyName = "enabled",
-		name = "Enable notifier",
-		description = "Play a sound when a Blood shard appears on the ground"
-	)
-	default boolean enabled()
-	{
-		return true;
-	}
+    @ConfigItem(
+        keyName = "enabled",
+        name = "Enable notifier",
+        description = "Play a sound when a Blood shard appears on the ground"
+    )
+    default boolean enabled()
+    {
+        return true;
+    }
 
-	@ConfigItem(
-		keyName = "soundFile",
-		name = "Sound file",
-		description = "Path to the WAV file used for the Blood shard notification"
-	)
-	default String soundFile()
-	{
-		return "";
-	}
+    @ConfigItem(
+        keyName = "notificationSound",
+        name = "Notification sound",
+        description = "Choose the sound to play when a Blood shard appears",
+        position = 1
+    )
+    default String notificationSound()
+    {
+        return "Custom";
+    }
 
-	@ConfigItem(
-		keyName = "selectSoundFile",
-		name = "Select sound file",
-		description = "Open a file picker to select a WAV file for the notification"
-	)
-	default boolean selectSoundFile()
-	{
-		return false;
-	}
+    @ConfigItem(
+        keyName = "soundFile",
+        name = "Custom sound file",
+        description = "Full path to a WAV file used when Notification sound is set to Custom",
+        position = 2
+    )
+    default String soundFile()
+    {
+        return "";
+    }
 
-	@Range(min = 0, max = 100)
-	@ConfigItem(
-		keyName = "volume",
-		name = "Volume",
-		description = "Volume of the custom WAV notification"
-	)
-	default int volume()
-	{
-		return 100;
-	}
+    @Range(min = 0, max = 100)
+    @ConfigItem(
+        keyName = "volume",
+        name = "Volume",
+        description = "Volume of the notification sound",
+        position = 3
+    )
+    default int volume()
+    {
+        return 100;
+    }
 
-	@ConfigItem(
-		keyName = "testSound",
-		name = "Test sound",
-		description = "Turn this on to immediately play the configured sound; it automatically turns itself back off"
-	)
-	default boolean testSound()
-	{
-		return false;
-	}
+    @ConfigItem(
+        keyName = "testSound",
+        name = "Test sound",
+        description = "Play the selected notification sound immediately",
+        position = 4
+    )
+    default boolean testSound()
+    {
+        return false;
+    }
 }
