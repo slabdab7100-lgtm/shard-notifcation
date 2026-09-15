@@ -5,10 +5,13 @@ import java.io.File;
 import java.util.concurrent.ScheduledExecutorService;
 import javax.inject.Inject;
 import javax.swing.JFileChooser;
-import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.SwingUtilities;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import lombok.extern.slf4j.Slf4j;
+import net.runelite.api.Client;
 import net.runelite.api.ItemID;
+import net.runelite.api.Preferences;
+import net.runelite.api.SoundEffectID;
 import net.runelite.api.TileItem;
 import net.runelite.api.events.ItemSpawned;
 import net.runelite.client.audio.AudioPlayer;
@@ -27,6 +30,13 @@ import net.runelite.client.plugins.PluginDescriptor;
 public class BloodShardNotifierPlugin extends Plugin
 {
 	private static final String CONFIG_GROUP = "bloodshardnotifierplus";
+	private static final String SOUND_BELL = "Bell";
+	private static final String SOUND_LEVEL_UP = "Level Up";
+	private static final String SOUND_CHIME = "Chime";
+	private static final String SOUND_CUSTOM = "Custom";
+
+	// OSRS sound effect used by the level-up fireworks.
+	private static final int LEVEL_UP_SOUND_ID = 1352;
 
 	@Inject
 	private BloodShardNotifierConfig config;
@@ -36,6 +46,9 @@ public class BloodShardNotifierPlugin extends Plugin
 
 	@Inject
 	private AudioPlayer audioPlayer;
+
+	@Inject
+	private Client client;
 
 	@Inject
 	private ScheduledExecutorService scheduledExecutorService;
@@ -127,10 +140,56 @@ public class BloodShardNotifierPlugin extends Plugin
 
 	private void playConfiguredSound()
 	{
+		String sound = config.notificationSound();
+		if (SOUND_CUSTOM.equals(sound))
+		{
+			playCustomSound();
+			return;
+		}
+
+		playPresetSound(sound);
+	}
+
+	private void playPresetSound(String sound)
+	{
+		int soundId;
+		switch (sound)
+		{
+			case SOUND_BELL:
+				soundId = SoundEffectID.TOWN_CRIER_BELL_DING;
+				break;
+			case SOUND_LEVEL_UP:
+				soundId = LEVEL_UP_SOUND_ID;
+				break;
+			case SOUND_CHIME:
+				soundId = SoundEffectID.GE_ADD_OFFER_DINGALING;
+				break;
+			default:
+				log.warn("Unknown Blood Shard Notifier Plus sound '{}'; falling back to Custom", sound);
+				playCustomSound();
+				return;
+		}
+
+		try
+		{
+			Preferences preferences = client.getPreferences();
+			int previousVolume = preferences.getSoundEffectVolume();
+			preferences.setSoundEffectVolume(config.volume());
+			client.playSoundEffect(soundId, config.volume());
+			preferences.setSoundEffectVolume(previousVolume);
+		}
+		catch (Exception ex)
+		{
+			log.warn("Unable to play Blood Shard Notifier Plus preset sound: {}", sound, ex);
+		}
+	}
+
+	private void playCustomSound()
+	{
 		String path = config.soundFile().trim();
 		if (path.isEmpty())
 		{
-			log.warn("Blood Shard Notifier Plus has no sound file configured; no sound will be played");
+			log.warn("Blood Shard Notifier Plus has no custom sound file configured");
 			return;
 		}
 
