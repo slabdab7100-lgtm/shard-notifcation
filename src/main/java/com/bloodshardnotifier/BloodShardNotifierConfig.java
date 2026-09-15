@@ -21,11 +21,21 @@ public interface BloodShardNotifierConfig extends Config
 	@ConfigItem(
 		keyName = "soundFile",
 		name = "Sound file",
-		description = "Full path to the WAV file to play. Leave blank to disable sound playback."
+		description = "Path to the WAV file used for the Blood shard notification"
 	)
 	default String soundFile()
 	{
 		return "";
+	}
+
+	@ConfigItem(
+		keyName = "selectSoundFile",
+		name = "Select sound file",
+		description = "Open a file picker to select a WAV file for the notification"
+	)
+	default boolean selectSoundFile()
+	{
+		return false;
 	}
 
 	@Range(min = 0, max = 100)
