@@ -30,10 +30,6 @@ import net.runelite.client.plugins.PluginDescriptor;
 public class BloodShardNotifierPlugin extends Plugin
 {
 	private static final String CONFIG_GROUP = "bloodshardnotifierplus";
-	private static final String SOUND_BELL = "Bell";
-	private static final String SOUND_LEVEL_UP = "Level Up";
-	private static final String SOUND_CHIME = "Chime";
-	private static final String SOUND_CUSTOM = "Custom";
 
 	// OSRS sound effect used by the level-up fireworks.
 	private static final int LEVEL_UP_SOUND_ID = 1352;
@@ -140,8 +136,8 @@ public class BloodShardNotifierPlugin extends Plugin
 
 	private void playConfiguredSound()
 	{
-		String sound = config.notificationSound();
-		if (SOUND_CUSTOM.equals(sound))
+		BloodShardNotifierConfig.NotificationSound sound = config.notificationSound();
+		if (sound == BloodShardNotifierConfig.NotificationSound.CUSTOM)
 		{
 			playCustomSound();
 			return;
@@ -150,22 +146,22 @@ public class BloodShardNotifierPlugin extends Plugin
 		playPresetSound(sound);
 	}
 
-	private void playPresetSound(String sound)
+	private void playPresetSound(BloodShardNotifierConfig.NotificationSound sound)
 	{
 		int soundId;
 		switch (sound)
 		{
-			case SOUND_BELL:
+			case BELL:
 				soundId = SoundEffectID.TOWN_CRIER_BELL_DING;
 				break;
-			case SOUND_LEVEL_UP:
+			case LEVEL_UP:
 				soundId = LEVEL_UP_SOUND_ID;
 				break;
-			case SOUND_CHIME:
+			case CHIME:
 				soundId = SoundEffectID.GE_ADD_OFFER_DINGALING;
 				break;
+			case CUSTOM:
 			default:
-				log.warn("Unknown Blood Shard Notifier Plus sound '{}'; falling back to Custom", sound);
 				playCustomSound();
 				return;
 		}
