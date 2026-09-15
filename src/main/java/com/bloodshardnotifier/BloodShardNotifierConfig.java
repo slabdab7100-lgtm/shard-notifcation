@@ -19,9 +19,19 @@ public interface BloodShardNotifierConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "notificationSound",
+		name = "Notification sound",
+		description = "Choose the sound to play when a Blood shard appears"
+	)
+	default String notificationSound()
+	{
+		return "Custom";
+	}
+
+	@ConfigItem(
 		keyName = "soundFile",
-		name = "Sound file",
-		description = "Path to the WAV file used for the Blood shard notification"
+		name = "Custom sound file",
+		description = "Path to the WAV file used when Notification sound is set to Custom"
 	)
 	default String soundFile()
 	{
@@ -31,7 +41,7 @@ public interface BloodShardNotifierConfig extends Config
 	@ConfigItem(
 		keyName = "selectSoundFile",
 		name = "Select sound file",
-		description = "Open a file picker to select a WAV file for the notification"
+		description = "Open a file picker to select a WAV file for the custom notification"
 	)
 	default boolean selectSoundFile()
 	{
@@ -42,7 +52,7 @@ public interface BloodShardNotifierConfig extends Config
 	@ConfigItem(
 		keyName = "volume",
 		name = "Volume",
-		description = "Volume of the custom WAV notification"
+		description = "Volume of the notification sound"
 	)
 	default int volume()
 	{
@@ -52,7 +62,7 @@ public interface BloodShardNotifierConfig extends Config
 	@ConfigItem(
 		keyName = "testSound",
 		name = "Test sound",
-		description = "Turn this on to immediately play the configured sound; it automatically turns itself back off"
+		description = "Turn this on to immediately play the selected sound; it automatically turns itself back off"
 	)
 	default boolean testSound()
 	{
