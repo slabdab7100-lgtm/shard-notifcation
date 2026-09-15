@@ -2,15 +2,15 @@
 
 **Never miss a Blood shard drop again.**
 
-Blood Shard Notifier Plus is a RuneLite plugin that detects when a **Blood shard appears on the ground** and plays a customizable alert sound. It is designed for players who want an immediate, reliable audio cue while grinding Vyrewatch Sentinels or other content where Blood shards can appear.
+Blood Shard Notifier Plus is a RuneLite plugin that detects when a **Blood shard appears on the ground** and plays a configurable alert sound. It is designed for players who want an immediate audio cue while grinding Vyrewatch Sentinels or other content where Blood shards can appear.
 
 ## Features
 
 - 🔔 Detects Blood shards when they spawn on the ground.
-- 🔊 Plays a customizable WAV alert through RuneLite's audio system.
-- 🎚️ Adjustable alert volume.
-- 📁 Choose your own WAV file using the plugin settings.
-- 🧪 Test your configured alert sound from the plugin settings.
+- 🔊 Includes three bundled notification sounds: **Bell**, **Level Up**, and **Chime**.
+- 📁 Supports a **Custom** WAV file using a path you provide.
+- 🎚️ Adjustable notification volume.
+- 🧪 Test the selected notification sound from the plugin settings.
 - ⚙️ Simple enable/disable control.
 - 🚫 Does not rely on chat messages, so other players' chat or clan/channel loot messages do not trigger the alert.
 
@@ -18,14 +18,21 @@ Blood Shard Notifier Plus is a RuneLite plugin that detects when a **Blood shard
 
 1. Install **Blood Shard Notifier Plus** from the RuneLite Plugin Hub.
 2. Enable the plugin in RuneLite's plugin configuration.
-3. Set your preferred alert volume.
-4. Select a WAV file for **Sound file**.
-5. Use the test sound option to confirm the alert works.
-6. Start your grind and let RuneLite alert you when a Blood shard hits the ground.
+3. Choose a **Notification sound**: **Bell**, **Level Up**, **Chime**, or **Custom**.
+4. Adjust the **Volume** to your preference.
+5. If **Custom** is selected, enter the full path to your WAV file in **Sound file**.
+6. Use **Test sound** to confirm the selected alert works.
+7. Start your grind and let RuneLite alert you when a Blood shard hits the ground.
+
+## Notification sounds
+
+The **Bell**, **Level Up**, and **Chime** sounds are bundled with the plugin, so no additional files are required for those options.
+
+**Custom** allows you to use your own WAV file. The custom file is only used when **Notification sound** is set to **Custom**.
 
 ## Custom sound
 
-Open the plugin settings and select or enter the full path to your WAV file in **Sound file**.
+Enter the full path to your WAV file in **Sound file**.
 
 Example:
 
