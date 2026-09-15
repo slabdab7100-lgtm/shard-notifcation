@@ -23,9 +23,9 @@ public interface BloodShardNotifierConfig extends Config
 		name = "Notification sound",
 		description = "Choose the sound to play when a Blood shard appears"
 	)
-	default String notificationSound()
+	default NotificationSound notificationSound()
 	{
-		return "Custom";
+		return NotificationSound.CUSTOM;
 	}
 
 	@ConfigItem(
@@ -67,5 +67,26 @@ public interface BloodShardNotifierConfig extends Config
 	default boolean testSound()
 	{
 		return false;
+	}
+
+	enum NotificationSound
+	{
+		BELL("Bell"),
+		LEVEL_UP("Level Up"),
+		CHIME("Chime"),
+		CUSTOM("Custom");
+
+		private final String displayName;
+
+		NotificationSound(String displayName)
+		{
+			this.displayName = displayName;
+		}
+
+		@Override
+		public String toString()
+		{
+			return displayName;
+		}
 	}
 }
