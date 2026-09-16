@@ -7,7 +7,6 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
@@ -31,11 +30,6 @@ public class BloodShardNotifierPlugin extends Plugin
 {
     private static final String CONFIG_GROUP = "bloodshardnotifierplus";
     private static final String SOUND_RESOURCE_ROOT = "/com/bloodshardnotifier/sounds/";
-    private static final Map<String, String> BUILT_IN_SOUNDS = Map.of(
-        "Bell", "bell.wav",
-        "Level Up", "level-up.wav",
-        "Chime", "chime.wav"
-    );
 
     @Inject
     private BloodShardNotifierConfig config;
@@ -142,9 +136,8 @@ public class BloodShardNotifierPlugin extends Plugin
 
     private File resolveSoundFile() throws IOException
     {
-        String selected = config.notificationSound().trim();
-
-        if ("Custom".equalsIgnoreCase(selected))
+        BloodShardNotifierConfig.NotificationSound selected = config.notificationSound();
+        if (selected == BloodShardNotifierConfig.NotificationSound.CUSTOM)
         {
             String path = config.soundFile().trim();
             if (path.isEmpty())
@@ -163,11 +156,20 @@ public class BloodShardNotifierPlugin extends Plugin
             return file;
         }
 
-        String resourceName = BUILT_IN_SOUNDS.get(selected);
-        if (resourceName == null)
+        String resourceName;
+        switch (selected)
         {
-            log.warn("Unknown Blood Shard Notifier Plus sound selection: {}", selected);
-            return null;
+            case BELL:
+                resourceName = "bell.wav";
+                break;
+            case LEVEL_UP:
+                resourceName = "level-up.wav";
+                break;
+            case CHIME:
+                resourceName = "chime.wav";
+                break;
+            default:
+                return null;
         }
 
         if (temporarySoundDirectory == null)
