@@ -40,12 +40,23 @@ public interface BloodShardNotifierConfig extends Config
         return "";
     }
 
+    @ConfigItem(
+        keyName = "selectSoundFile",
+        name = "Select custom sound",
+        description = "Open a Windows file picker and copy a WAV file into the plugin directory",
+        position = 3
+    )
+    default boolean selectSoundFile()
+    {
+        return false;
+    }
+
     @Range(min = 0, max = 100)
     @ConfigItem(
         keyName = "volume",
         name = "Volume",
         description = "Volume of the notification sound",
-        position = 3
+        position = 4
     )
     default int volume()
     {
@@ -56,7 +67,7 @@ public interface BloodShardNotifierConfig extends Config
         keyName = "testSound",
         name = "Test sound",
         description = "Play the selected notification sound immediately",
-        position = 4
+        position = 5
     )
     default boolean testSound()
     {
