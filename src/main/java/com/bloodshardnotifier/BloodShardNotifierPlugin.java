@@ -2,15 +2,20 @@ package com.bloodshardnotifier;
 
 import com.google.inject.Provides;
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.concurrent.ScheduledExecutorService;
 import javax.inject.Inject;
 import javax.swing.JFileChooser;
-import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.SwingUtilities;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ItemID;
 import net.runelite.api.TileItem;
 import net.runelite.api.events.ItemSpawned;
+import net.runelite.client.RuneLite;
 import net.runelite.client.audio.AudioPlayer;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
@@ -20,150 +25,234 @@ import net.runelite.client.plugins.PluginDescriptor;
 
 @Slf4j
 @PluginDescriptor(
-	name = "Blood Shard Notifier Plus",
-	description = "Plays a configurable sound when a Blood shard appears on the ground",
-	tags = {"bloodshard", "notification", "sound", "vampyres", "vyrewatch"}
+    name = "Blood Shard Notifier Plus",
+    description = "Plays a configurable sound when a Blood shard appears on the ground",
+    tags = {"bloodshard", "notification", "sound", "vampyres", "vyrewatch"}
 )
 public class BloodShardNotifierPlugin extends Plugin
 {
-	private static final String CONFIG_GROUP = "bloodshardnotifierplus";
+    private static final String CONFIG_GROUP = "bloodshardnotifierplus";
+    private static final String SOUND_RESOURCE_ROOT = "/com/bloodshardnotifier/sounds/";
 
-	@Inject
-	private BloodShardNotifierConfig config;
+    @Inject
+    private BloodShardNotifierConfig config;
 
-	@Inject
-	private ConfigManager configManager;
+    @Inject
+    private ConfigManager configManager;
 
-	@Inject
-	private AudioPlayer audioPlayer;
+    @Inject
+    private AudioPlayer audioPlayer;
 
-	@Inject
-	private ScheduledExecutorService scheduledExecutorService;
+    @Inject
+    private ScheduledExecutorService scheduledExecutorService;
 
-	@Override
-	protected void startUp()
-	{
-		log.info("Blood Shard Notifier Plus started");
-	}
+    private Path pluginDirectory;
 
-	@Override
-	protected void shutDown()
-	{
-		log.info("Blood Shard Notifier Plus stopped");
-	}
+    @Override
+    protected void startUp() throws Exception
+    {
+        pluginDirectory = RuneLite.RUNELITE_DIR.toPath().resolve(CONFIG_GROUP).normalize();
+        Files.createDirectories(pluginDirectory);
+        log.info("Blood Shard Notifier Plus started");
+    }
 
-	@Subscribe
-	public void onItemSpawned(ItemSpawned event)
-	{
-		if (!config.enabled())
-		{
-			return;
-		}
+    @Override
+    protected void shutDown()
+    {
+        pluginDirectory = null;
+        log.info("Blood Shard Notifier Plus stopped");
+    }
 
-		TileItem item = event.getItem();
-		if (item.getId() == ItemID.BLOOD_SHARD)
-		{
-			scheduleSound();
-		}
-	}
+    @Subscribe
+    public void onItemSpawned(ItemSpawned event)
+    {
+        if (!config.enabled())
+        {
+            return;
+        }
 
-	@Subscribe
-	public void onConfigChanged(ConfigChanged event)
-	{
-		if (!CONFIG_GROUP.equals(event.getGroup()))
-		{
-			return;
-		}
+        TileItem item = event.getItem();
+        if (item.getId() == ItemID.BLOOD_SHARD)
+        {
+            scheduleSound();
+        }
+    }
 
-		if ("testSound".equals(event.getKey()) && config.testSound())
-		{
-			configManager.setConfiguration(CONFIG_GROUP, "testSound", false);
-			scheduleSound();
-		}
-		else if ("selectSoundFile".equals(event.getKey()) && config.selectSoundFile())
-		{
-			configManager.setConfiguration(CONFIG_GROUP, "selectSoundFile", false);
-			SwingUtilities.invokeLater(this::chooseSoundFile);
-		}
-	}
+    @Subscribe
+    public void onConfigChanged(ConfigChanged event)
+    {
+        if (!CONFIG_GROUP.equals(event.getGroup()))
+        {
+            return;
+        }
 
-	private void chooseSoundFile()
-	{
-		JFileChooser fileChooser = new JFileChooser();
-		fileChooser.setDialogTitle("Select Blood Shard notification sound");
-		fileChooser.setFileFilter(new FileNameExtensionFilter("WAV audio files (*.wav)", "wav"));
-		fileChooser.setAcceptAllFileFilterUsed(false);
+        if ("testSound".equals(event.getKey()) && config.testSound())
+        {
+            configManager.setConfiguration(CONFIG_GROUP, "testSound", false);
+            scheduleSound();
+        }
+        else if ("selectSoundFile".equals(event.getKey()) && config.selectSoundFile())
+        {
+            configManager.setConfiguration(CONFIG_GROUP, "selectSoundFile", false);
+            SwingUtilities.invokeLater(this::chooseSoundFile);
+        }
+    }
 
-		String currentPath = config.soundFile().trim();
-		if (!currentPath.isEmpty())
-		{
-			File currentFile = new File(currentPath);
-			if (currentFile.exists())
-			{
-				fileChooser.setSelectedFile(currentFile);
-			}
-		}
+    private void chooseSoundFile()
+    {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Select Blood Shard notification sound");
+        fileChooser.setFileFilter(new FileNameExtensionFilter("WAV audio files (*.wav)", "wav"));
+        fileChooser.setAcceptAllFileFilterUsed(false);
 
-		int result = fileChooser.showOpenDialog(null);
-		if (result != JFileChooser.APPROVE_OPTION)
-		{
-			return;
-		}
+        String currentFileName = config.soundFile().trim();
+        if (!currentFileName.isEmpty() && pluginDirectory != null)
+        {
+            Path currentFile = pluginDirectory.resolve(currentFileName).normalize();
+            if (currentFile.startsWith(pluginDirectory) && Files.isRegularFile(currentFile))
+            {
+                fileChooser.setSelectedFile(currentFile.toFile());
+            }
+        }
 
-		File selectedFile = fileChooser.getSelectedFile();
-		if (selectedFile == null || !selectedFile.isFile())
-		{
-			return;
-		}
+        int result = fileChooser.showOpenDialog(null);
+        if (result != JFileChooser.APPROVE_OPTION)
+        {
+            return;
+        }
 
-		configManager.setConfiguration(CONFIG_GROUP, "soundFile", selectedFile.getAbsolutePath());
-		log.info("Blood Shard Notifier Plus sound file selected: {}", selectedFile);
-	}
+        File selectedFile = fileChooser.getSelectedFile();
+        if (selectedFile == null || !selectedFile.isFile())
+        {
+            return;
+        }
 
-	private void scheduleSound()
-	{
-		scheduledExecutorService.execute(this::playConfiguredSound);
-	}
+        String fileName = selectedFile.getName();
+        if (!fileName.toLowerCase().endsWith(".wav"))
+        {
+            log.warn("Blood Shard Notifier Plus custom sound must be a WAV file: {}", selectedFile);
+            return;
+        }
 
-	private void playConfiguredSound()
-	{
-		String path = config.soundFile().trim();
-		if (path.isEmpty())
-		{
-			log.warn("Blood Shard Notifier Plus has no sound file configured; no sound will be played");
-			return;
-		}
+        if (pluginDirectory == null)
+        {
+            log.warn("Blood Shard Notifier Plus plugin directory is not available");
+            return;
+        }
 
-		File file = new File(path);
-		if (!file.isFile())
-		{
-			log.warn("Blood Shard Notifier Plus sound file does not exist: {}", path);
-			return;
-		}
+        try
+        {
+            Path destination = pluginDirectory.resolve(fileName).normalize();
+            if (!destination.startsWith(pluginDirectory))
+            {
+                log.warn("Blood Shard Notifier Plus custom sound destination is invalid: {}", destination);
+                return;
+            }
 
-		try
-		{
-			audioPlayer.play(file, volumeToGain(config.volume()));
-		}
-		catch (Exception ex)
-		{
-			log.warn("Unable to play Blood Shard Notifier Plus sound: {}", file, ex);
-		}
-	}
+            Files.copy(selectedFile.toPath(), destination, StandardCopyOption.REPLACE_EXISTING);
+            configManager.setConfiguration(CONFIG_GROUP, "soundFile", fileName);
+            log.info("Blood Shard Notifier Plus copied custom sound to {}", destination);
+        }
+        catch (IOException ex)
+        {
+            log.warn("Unable to copy Blood Shard Notifier Plus custom sound into plugin directory", ex);
+        }
+    }
 
-	private float volumeToGain(int volume)
-	{
-		if (volume <= 0)
-		{
-			return -80.0f;
-		}
+    private void scheduleSound()
+    {
+        scheduledExecutorService.execute(this::playConfiguredSound);
+    }
 
-		return (float) (20.0 * Math.log10(volume / 100.0));
-	}
+    private void playConfiguredSound()
+    {
+        try
+        {
+            BloodShardNotifierConfig.NotificationSound selected = config.notificationSound();
+            if (selected == BloodShardNotifierConfig.NotificationSound.CUSTOM)
+            {
+                File file = resolveCustomSoundFile();
+                if (file == null)
+                {
+                    return;
+                }
 
-	@Provides
-	BloodShardNotifierConfig provideConfig(ConfigManager configManager)
-	{
-		return configManager.getConfig(BloodShardNotifierConfig.class);
-	}
+                audioPlayer.play(file, volumeToGain(config.volume()));
+                return;
+            }
+
+            String resourceName;
+            switch (selected)
+            {
+                case BELL:
+                    resourceName = "bell.wav";
+                    break;
+                case LEVEL_UP:
+                    resourceName = "level-up.wav";
+                    break;
+                case CHIME:
+                    resourceName = "chime.wav";
+                    break;
+                default:
+                    return;
+            }
+
+            audioPlayer.play(
+                BloodShardNotifierPlugin.class,
+                SOUND_RESOURCE_ROOT + resourceName,
+                volumeToGain(config.volume())
+            );
+        }
+        catch (Exception ex)
+        {
+            log.warn("Unable to play Blood Shard Notifier Plus sound", ex);
+        }
+    }
+
+    private File resolveCustomSoundFile() throws IOException
+    {
+        if (pluginDirectory == null)
+        {
+            log.warn("Blood Shard Notifier Plus plugin directory is not available");
+            return null;
+        }
+
+        String fileName = config.soundFile().trim();
+        if (fileName.isEmpty())
+        {
+            log.warn("Blood Shard Notifier Plus has no custom sound file configured");
+            return null;
+        }
+
+        Path file = pluginDirectory.resolve(fileName).normalize();
+        if (!file.startsWith(pluginDirectory))
+        {
+            log.warn("Blood Shard Notifier Plus custom sound must be inside {}", pluginDirectory);
+            return null;
+        }
+
+        if (!Files.isRegularFile(file))
+        {
+            log.warn("Blood Shard Notifier Plus custom sound file does not exist: {}", file);
+            return null;
+        }
+
+        return file.toFile();
+    }
+
+    private float volumeToGain(int volume)
+    {
+        if (volume <= 0)
+        {
+            return -80.0f;
+        }
+
+        return (float) (20.0 * Math.log10(volume / 100.0));
+    }
+
+    @Provides
+    BloodShardNotifierConfig provideConfig(ConfigManager configManager)
+    {
+        return configManager.getConfig(BloodShardNotifierConfig.class);
+    }
 }
