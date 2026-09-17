@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ItemID;
 import net.runelite.api.TileItem;
 import net.runelite.api.events.ItemSpawned;
+import net.runelite.client.RuneLite;
 import net.runelite.client.audio.AudioPlayer;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
@@ -174,7 +175,9 @@ public class BloodShardNotifierPlugin extends Plugin
 
         if (temporarySoundDirectory == null)
         {
-            temporarySoundDirectory = Files.createTempDirectory("blood-shard-notifier-");
+            Path pluginDirectory = RuneLite.RUNELITE_DIR.toPath().resolve(CONFIG_GROUP);
+            Files.createDirectories(pluginDirectory);
+            temporarySoundDirectory = Files.createTempDirectory(pluginDirectory, "sound-");
         }
 
         Path target = temporarySoundDirectory.resolve(resourceName);
