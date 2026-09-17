@@ -2,18 +2,12 @@ package com.bloodshardnotifier;
 
 import com.google.inject.Provides;
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.concurrent.ScheduledExecutorService;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ItemID;
 import net.runelite.api.TileItem;
 import net.runelite.api.events.ItemSpawned;
-import net.runelite.client.RuneLite;
 import net.runelite.client.audio.AudioPlayer;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
@@ -44,8 +38,6 @@ public class BloodShardNotifierPlugin extends Plugin
     @Inject
     private ScheduledExecutorService scheduledExecutorService;
 
-    private Path temporarySoundDirectory;
-
     @Override
     protected void startUp()
     {
@@ -55,30 +47,6 @@ public class BloodShardNotifierPlugin extends Plugin
     @Override
     protected void shutDown()
     {
-        if (temporarySoundDirectory != null)
-        {
-            try
-            {
-                Files.walk(temporarySoundDirectory)
-                    .sorted(java.util.Comparator.reverseOrder())
-                    .forEach(path -> {
-                        try
-                        {
-                            Files.deleteIfExists(path);
-                        }
-                        catch (IOException ex)
-                        {
-                            log.debug("Unable to remove temporary sound file: {}", path, ex);
-                        }
-                    });
-            }
-            catch (IOException ex)
-            {
-                log.debug("Unable to clean up temporary sound directory", ex);
-            }
-            temporarySoundDirectory = null;
-        }
-
         log.info("Blood Shard Notifier Plus stopped");
     }
 
@@ -121,82 +89,53 @@ public class BloodShardNotifierPlugin extends Plugin
     {
         try
         {
-            File soundFile = resolveSoundFile();
-            if (soundFile == null)
+            BloodShardNotifierConfig.NotificationSound selected = config.notificationSound();
+            if (selected == BloodShardNotifierConfig.NotificationSound.CUSTOM)
             {
+                String path = config.soundFile().trim();
+                if (path.isEmpty())
+                {
+                    log.warn("Blood Shard Notifier Plus has no custom sound file configured");
+                    return;
+                }
+
+                File file = new File(path);
+                if (!file.isFile())
+                {
+                    log.warn("Blood Shard Notifier Plus sound file does not exist: {}", path);
+                    return;
+                }
+
+                audioPlayer.play(file, volumeToGain(config.volume()));
                 return;
             }
 
-            audioPlayer.play(soundFile, volumeToGain(config.volume()));
+            String resourceName;
+            switch (selected)
+            {
+                case BELL:
+                    resourceName = "bell.wav";
+                    break;
+                case LEVEL_UP:
+                    resourceName = "level-up.wav";
+                    break;
+                case CHIME:
+                    resourceName = "chime.wav";
+                    break;
+                default:
+                    return;
+            }
+
+            audioPlayer.play(
+                BloodShardNotifierPlugin.class,
+                SOUND_RESOURCE_ROOT + resourceName,
+                volumeToGain(config.volume())
+            );
         }
         catch (Exception ex)
         {
             log.warn("Unable to play Blood Shard Notifier Plus sound", ex);
         }
-    }
-
-    private File resolveSoundFile() throws IOException
-    {
-        BloodShardNotifierConfig.NotificationSound selected = config.notificationSound();
-        if (selected == BloodShardNotifierConfig.NotificationSound.CUSTOM)
-        {
-            String path = config.soundFile().trim();
-            if (path.isEmpty())
-            {
-                log.warn("Blood Shard Notifier Plus has no custom sound file configured");
-                return null;
-            }
-
-            File file = new File(path);
-            if (!file.isFile())
-            {
-                log.warn("Blood Shard Notifier Plus sound file does not exist: {}", path);
-                return null;
-            }
-
-            return file;
-        }
-
-        String resourceName;
-        switch (selected)
-        {
-            case BELL:
-                resourceName = "bell.wav";
-                break;
-            case LEVEL_UP:
-                resourceName = "level-up.wav";
-                break;
-            case CHIME:
-                resourceName = "chime.wav";
-                break;
-            default:
-                return null;
-        }
-
-        if (temporarySoundDirectory == null)
-        {
-            Path pluginDirectory = RuneLite.RUNELITE_DIR.toPath().resolve(CONFIG_GROUP);
-            Files.createDirectories(pluginDirectory);
-            temporarySoundDirectory = Files.createTempDirectory(pluginDirectory, "sound-");
-        }
-
-        Path target = temporarySoundDirectory.resolve(resourceName);
-        if (!Files.isRegularFile(target))
-        {
-            String resourcePath = SOUND_RESOURCE_ROOT + resourceName;
-            try (InputStream input = BloodShardNotifierPlugin.class.getResourceAsStream(resourcePath))
-            {
-                if (input == null)
-                {
-                    log.warn("Bundled Blood Shard Notifier Plus sound is missing: {}", resourcePath);
-                    return null;
-                }
-
-                Files.copy(input, target, StandardCopyOption.REPLACE_EXISTING);
-            }
-        }
-
-        return target.toFile();
     }
 
     private float volumeToGain(int volume)
