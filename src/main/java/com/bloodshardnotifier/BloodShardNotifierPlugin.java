@@ -5,8 +5,12 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.concurrent.ScheduledExecutorService;
 import javax.inject.Inject;
+import javax.swing.JFileChooser;
+import javax.swing.SwingUtilities;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ItemID;
 import net.runelite.api.TileItem;
@@ -77,15 +81,81 @@ public class BloodShardNotifierPlugin extends Plugin
     @Subscribe
     public void onConfigChanged(ConfigChanged event)
     {
-        if (!CONFIG_GROUP.equals(event.getGroup()) || !"testSound".equals(event.getKey()))
+        if (!CONFIG_GROUP.equals(event.getGroup()))
         {
             return;
         }
 
-        if (config.testSound())
+        if ("testSound".equals(event.getKey()) && config.testSound())
         {
             configManager.setConfiguration(CONFIG_GROUP, "testSound", false);
             scheduleSound();
+        }
+        else if ("selectSoundFile".equals(event.getKey()) && config.selectSoundFile())
+        {
+            configManager.setConfiguration(CONFIG_GROUP, "selectSoundFile", false);
+            SwingUtilities.invokeLater(this::chooseSoundFile);
+        }
+    }
+
+    private void chooseSoundFile()
+    {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Select Blood Shard notification sound");
+        fileChooser.setFileFilter(new FileNameExtensionFilter("WAV audio files (*.wav)", "wav"));
+        fileChooser.setAcceptAllFileFilterUsed(false);
+
+        String currentFileName = config.soundFile().trim();
+        if (!currentFileName.isEmpty() && pluginDirectory != null)
+        {
+            Path currentFile = pluginDirectory.resolve(currentFileName).normalize();
+            if (currentFile.startsWith(pluginDirectory) && Files.isRegularFile(currentFile))
+            {
+                fileChooser.setSelectedFile(currentFile.toFile());
+            }
+        }
+
+        int result = fileChooser.showOpenDialog(null);
+        if (result != JFileChooser.APPROVE_OPTION)
+        {
+            return;
+        }
+
+        File selectedFile = fileChooser.getSelectedFile();
+        if (selectedFile == null || !selectedFile.isFile())
+        {
+            return;
+        }
+
+        String fileName = selectedFile.getName();
+        if (!fileName.toLowerCase().endsWith(".wav"))
+        {
+            log.warn("Blood Shard Notifier Plus custom sound must be a WAV file: {}", selectedFile);
+            return;
+        }
+
+        if (pluginDirectory == null)
+        {
+            log.warn("Blood Shard Notifier Plus plugin directory is not available");
+            return;
+        }
+
+        try
+        {
+            Path destination = pluginDirectory.resolve(fileName).normalize();
+            if (!destination.startsWith(pluginDirectory))
+            {
+                log.warn("Blood Shard Notifier Plus custom sound destination is invalid: {}", destination);
+                return;
+            }
+
+            Files.copy(selectedFile.toPath(), destination, StandardCopyOption.REPLACE_EXISTING);
+            configManager.setConfiguration(CONFIG_GROUP, "soundFile", fileName);
+            log.info("Blood Shard Notifier Plus copied custom sound to {}", destination);
+        }
+        catch (IOException ex)
+        {
+            log.warn("Unable to copy Blood Shard Notifier Plus custom sound into plugin directory", ex);
         }
     }
 
