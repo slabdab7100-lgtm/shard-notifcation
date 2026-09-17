@@ -32,7 +32,7 @@ public interface BloodShardNotifierConfig extends Config
     @ConfigItem(
         keyName = "soundFile",
         name = "Custom sound file",
-        description = "Full path to a WAV file used when Notification sound is set to Custom",
+        description = "Filename of a WAV file stored in the Blood Shard Notifier Plus plugin directory",
         position = 2
     )
     default String soundFile()
