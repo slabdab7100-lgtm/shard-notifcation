@@ -26,7 +26,7 @@ public interface BloodShardNotifierConfig extends Config
     )
     default NotificationSound notificationSound()
     {
-        return NotificationSound.CUSTOM;
+        return NotificationSound.BELL;
     }
 
     @ConfigItem(
